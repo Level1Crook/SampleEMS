@@ -1,1 +1,582 @@
-iii
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>uConnect EMS - Sample Frontend</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: Arial, sans-serif; background:#f5f5f5; color:#333; }
+
+    /* Top bar / theme */
+    header {
+      background: linear-gradient(90deg,#ff00aa,#4c00b8);
+      color:white; padding:10px 20px; display:flex; align-items:center;
+      justify-content:space-between;
+    }
+    .brand {
+      display:flex; align-items:center; gap:10px;
+      font-weight:bold; font-size:20px;
+    }
+    .brand-logo {
+      width:40px;height:40px;border-radius:50%;
+      background: radial-gradient(circle, #4c00b8 40%, #ff00aa 60%);
+      display:flex;align-items:center;justify-content:center;
+      color:white;font-size:14px;font-weight:bold;
+    }
+    .user-info { font-size:14px; }
+    .btn {
+      padding:6px 12px; border:none; border-radius:4px;
+      cursor:pointer; font-size:14px;
+    }
+    .btn-primary { background:#4c00b8; color:white; }
+    .btn-secondary { background:#ff00aa; color:white; }
+    .btn-danger { background:#d9534f;color:white; }
+    .btn-sm { padding:4px 8px; font-size:12px; }
+
+    main { padding:20px; }
+
+    /* Layout */
+    .hidden { display:none !important; }
+
+    /* Login box */
+    #login-section {
+      max-width:350px;margin:80px auto;padding:25px;
+      background:white;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,.1);
+    }
+    #login-section h2 { margin-bottom:15px;text-align:center; }
+    .form-group { margin-bottom:12px; }
+    label { display:block;margin-bottom:4px;font-size:13px; }
+    input[type="text"], input[type="password"], select {
+      width:100%;padding:7px;border:1px solid #ccc;border-radius:4px;
+      font-size:14px;
+    }
+
+    /* Nav tabs */
+    #app-nav {
+      margin-bottom:15px; display:flex; gap:10px; flex-wrap:wrap;
+    }
+    .nav-tab {
+      padding:6px 10px;border-radius:4px;
+      background:#e0d5ff;cursor:pointer;font-size:14px;
+    }
+    .nav-tab.active { background:#4c00b8;color:white; }
+
+    /* Cards / sections */
+    .card {
+      background:white;border-radius:8px;padding:15px;
+      box-shadow:0 2px 6px rgba(0,0,0,.06);margin-bottom:20px;
+    }
+    .card h3 { margin-bottom:10px;border-bottom:1px solid #eee;padding-bottom:6px; }
+
+    /* Table */
+    table {
+      width:100%;border-collapse:collapse;font-size:14px;
+    }
+    th, td {
+      padding:8px;border-bottom:1px solid #eee;text-align:left;
+    }
+    th { background:#faf7ff; }
+    tr:nth-child(even) { background:#fafafa; }
+
+    /* Pagination */
+    .pagination {
+      display:flex;gap:5px;justify-content:flex-end;margin-top:10px;
+    }
+
+    /* Modal */
+    .modal-backdrop {
+      position:fixed;top:0;left:0;right:0;bottom:0;
+      background:rgba(0,0,0,.4);display:flex;
+      align-items:center;justify-content:center;z-index:10;
+    }
+    .modal {
+      background:white;border-radius:8px;padding:15px;
+      width:350px;max-width:90%;
+      box-shadow:0 2px 10px rgba(0,0,0,.25);
+    }
+    .modal-header { display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;}
+    .modal-header h4 { margin:0; }
+    .modal-body { max-height:60vh;overflow:auto; }
+    .modal-footer { text-align:right;margin-top:10px; }
+
+    .badge {
+      padding:2px 6px;border-radius:4px;font-size:11px;color:white;
+    }
+    .badge-pending { background:#f0ad4e; }
+    .badge-approved { background:#5cb85c; }
+
+    .mt-10 { margin-top:10px; }
+    .mb-10 { margin-bottom:10px; }
+    .flex { display:flex; }
+    .space-between { justify-content:space-between; }
+    .gap-10 { gap:10px; }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="brand">
+    <div class="brand-logo">uC</div>
+    <div>uConnect EMS</div>
+  </div>
+  <div class="user-info" id="user-info">
+    <!-- Filled by JS -->
+  </div>
+</header>
+
+<main>
+  <!-- LOGIN SECTION -->
+  <section id="login-section">
+    <h2>Login</h2>
+    <p style="font-size:12px;margin-bottom:10px;">
+      Demo only – no real authentication. Choose a role to simulate.
+    </p>
+    <div class="form-group">
+      <label for="login-username">Username</label>
+      <input id="login-username" type="text" placeholder="Any name (e.g. Juan)" />
+    </div>
+    <div class="form-group">
+      <label for="login-role">Role</label>
+      <select id="login-role">
+        <option value="employee">Employee</option>
+        <option value="supervisor">Supervisor</option>
+        <option value="hr">HR</option>
+      </select>
+    </div>
+    <button class="btn btn-primary" id="btn-login">Login</button>
+  </section>
+
+  <!-- APP SECTION -->
+  <section id="app-section" class="hidden">
+    <!-- Logout + nav -->
+    <div class="flex space-between mb-10">
+      <div id="app-role-label" style="font-weight:bold;"></div>
+      <button class="btn btn-danger btn-sm" id="btn-logout">Logout</button>
+    </div>
+
+    <div id="app-nav">
+      <!-- Tabs will be shown/hidden based on role -->
+      <div class="nav-tab" data-target="dashboard-section">Dashboard</div>
+      <div class="nav-tab" data-target="employees-section">Employees</div>
+      <div class="nav-tab" data-target="team-section">My Team</div>
+      <div class="nav-tab" data-target="payslip-section">Payslips</div>
+    </div>
+
+    <!-- DASHBOARD -->
+    <section id="dashboard-section" class="card">
+      <h3>Dashboard</h3>
+      <p id="dashboard-text"></p>
+    </section>
+
+    <!-- EMPLOYEES (HR + SUPERVISOR) -->
+    <section id="employees-section" class="card hidden">
+      <div class="flex space-between">
+        <h3>Employees</h3>
+        <button class="btn btn-primary btn-sm" id="btn-add-employee">+ Add Employee</button>
+      </div>
+      <table>
+        <thead>
+        <tr>
+          <th>ID</th><th>Name</th><th>Position</th><th>Supervisor</th><th>Actions</th>
+        </tr>
+        </thead>
+        <tbody id="employees-tbody"></tbody>
+      </table>
+      <div class="pagination" id="employees-pagination"></div>
+    </section>
+
+    <!-- TEAM (SUPERVISOR ONLY) -->
+    <section id="team-section" class="card hidden">
+      <div class="flex space-between">
+        <h3>My Team</h3>
+        <button class="btn btn-secondary btn-sm" id="btn-add-to-team">Add Employee to Team</button>
+      </div>
+      <table>
+        <thead>
+        <tr>
+          <th>ID</th><th>Name</th><th>Position</th>
+        </tr>
+        </thead>
+        <tbody id="team-tbody"></tbody>
+      </table>
+    </section>
+
+    <!-- PAYSLIPS (ALL ROLES) -->
+    <section id="payslip-section" class="card hidden">
+      <h3>Payslips</h3>
+      <table>
+        <thead>
+        <tr>
+          <th>ID</th><th>Employee</th><th>Period</th><th>Amount</th><th>Status</th><th>Actions</th>
+        </tr>
+        </thead>
+        <tbody id="payslip-tbody"></tbody>
+      </table>
+    </section>
+  </section>
+
+  <!-- MODALS -->
+  <div id="modal-container" class="hidden"></div>
+</main>
+
+<script>
+  /*********** DEMO DATA ***********/
+  let employees = [
+    { id:1, name:"Juan Dela Cruz", position:"Developer", supervisorId:2 },
+    { id:2, name:"Maria Santos", position:"Supervisor", supervisorId:null },
+    { id:3, name:"Pedro Reyes", position:"HR Officer", supervisorId:null },
+    { id:4, name:"Ana Lopez", position:"Developer", supervisorId:2 },
+    { id:5, name:"Carlos Garcia", position:"Tester", supervisorId:2 },
+    { id:6, name:"Liza Ramos", position:"Developer", supervisorId:2 },
+  ];
+
+  // payslip: id, employeeId, period, amount, status
+  let payslips = [
+    { id:1, employeeId:1, period:"Jan 2026", amount:30000, status:"Pending" },
+    { id:2, employeeId:1, period:"Feb 2026", amount:32000, status:"Approved" },
+    { id:3, employeeId:4, period:"Jan 2026", amount:28000, status:"Pending" },
+    { id:4, employeeId:5, period:"Jan 2026", amount:27000, status:"Approved" },
+  ];
+
+  let currentUser = null; // {id, name, role}
+  let employeesPage = 1;
+  const pageSize = 4;
+
+  /*********** UTILITIES ***********/
+  const $ = sel => document.querySelector(sel);
+  const createEl = (tag, attrs={})=>{
+    const el = document.createElement(tag);
+    Object.entries(attrs).forEach(([k,v])=>el[k]=v);
+    return el;
+  };
+
+  function renderUserInfo() {
+    const info = currentUser
+      ? `${currentUser.name} (${currentUser.role.toUpperCase()})`
+      : 'Not logged in';
+    $('#user-info').textContent = info;
+  }
+
+  function showSection(id) {
+    document.querySelectorAll('#app-section > section.card').forEach(sec=>{
+      sec.classList.toggle('hidden', sec.id !== id);
+    });
+  }
+
+  function setActiveTab(targetId) {
+    document.querySelectorAll('.nav-tab').forEach(tab=>{
+      const match = tab.dataset.target === targetId;
+      tab.classList.toggle('active', match);
+      // hide tabs that are not allowed for role (handled elsewhere)
+    });
+  }
+
+  /*********** LOGIN / LOGOUT ***********/
+  $('#btn-login').addEventListener('click', ()=>{
+    const name = $('#login-username').value.trim() || 'Demo User';
+    const role = $('#login-role').value; // employee | supervisor | hr
+    currentUser = { id: 999, name, role };  // demo id
+    $('#login-section').classList.add('hidden');
+    $('#app-section').classList.remove('hidden');
+    $('#app-role-label').textContent = `Role: ${role.toUpperCase()}`;
+    renderUserInfo();
+    configureNavForRole();
+    loadAllViews();
+  });
+
+  $('#btn-logout').addEventListener('click', ()=>{
+    currentUser = null;
+    $('#login-section').classList.remove('hidden');
+    $('#app-section').classList.add('hidden');
+    $('#login-username').value = "";
+    $('#login-role').value = "employee";
+    renderUserInfo();
+  });
+
+  /*********** NAVIGATION / ROLE PERMISSIONS ***********/
+  function configureNavForRole() {
+    if (!currentUser) return;
+    const role = currentUser.role;
+    // show/hide tabs per role
+    document.querySelectorAll('.nav-tab').forEach(tab=>{
+      const target = tab.dataset.target;
+      let show = false;
+      if (target === 'dashboard-section') show = true;
+      if (target === 'employees-section') show = (role === 'hr' || role === 'supervisor');
+      if (target === 'team-section') show = (role === 'supervisor');
+      if (target === 'payslip-section') show = true; // all can see some payslips
+      tab.classList.toggle('hidden', !show);
+    });
+    // default tab: dashboard
+    setActiveTab('dashboard-section');
+    showSection('dashboard-section');
+
+    // dashboard text
+    const t = {
+      employee: "Welcome Employee! Here you can view your payslips and later your time in/out records.",
+      supervisor: "Welcome Supervisor! Manage your team, view their payslips, and monitor employees.",
+      hr: "Welcome HR! You can manage employees and approve payslips."
+    };
+    $('#dashboard-text').textContent = t[role] || "";
+  }
+
+  document.querySelectorAll('.nav-tab').forEach(tab=>{
+    tab.addEventListener('click', ()=>{
+      if (tab.classList.contains('hidden')) return;
+      const target = tab.dataset.target;
+      setActiveTab(target);
+      showSection(target);
+      if (target === 'employees-section') renderEmployeesTable();
+      if (target === 'team-section') renderTeam();
+      if (target === 'payslip-section') renderPayslips();
+    });
+  });
+
+  /*********** EMPLOYEES TABLE + PAGINATION ***********/
+  function renderEmployeesTable() {
+    const tbody = $('#employees-tbody');
+    tbody.innerHTML = "";
+    const start = (employeesPage-1)*pageSize;
+    const pageItems = employees.slice(start, start+pageSize);
+
+    pageItems.forEach(emp=>{
+      const tr = document.createElement('tr');
+      const supervisor = employees.find(e=>e.id===emp.supervisorId);
+      tr.innerHTML = `
+        <td>${emp.id}</td>
+        <td>${emp.name}</td>
+        <td>${emp.position}</td>
+        <td>${supervisor ? supervisor.name : '-'}</td>
+        <td>
+          <button class="btn btn-sm btn-secondary" data-edit="${emp.id}">Edit</button>
+        </td>
+      `;
+      tbody.appendChild(tr);
+    });
+
+    // action buttons
+    tbody.querySelectorAll('[data-edit]').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        const id = parseInt(btn.dataset.edit,10);
+        openEmployeeModal(employees.find(e=>e.id===id));
+      });
+    });
+
+    renderEmployeesPagination();
+  }
+
+  function renderEmployeesPagination() {
+    const totalPages = Math.ceil(employees.length / pageSize) || 1;
+    if (employeesPage > totalPages) employeesPage = totalPages;
+    const container = $('#employees-pagination');
+    container.innerHTML = "";
+
+    const prev = createEl('button',{className:'btn btn-sm',textContent:'Prev'});
+    prev.disabled = employeesPage===1;
+    prev.onclick = ()=>{ employeesPage--; renderEmployeesTable(); };
+    container.appendChild(prev);
+
+    for (let i=1;i<=totalPages;i++){
+      const b = createEl('button',{className:'btn btn-sm',textContent:i});
+      if (i===employeesPage) { b.style.background='#4c00b8'; b.style.color='#fff'; }
+      b.onclick = ()=>{ employeesPage=i; renderEmployeesTable(); };
+      container.appendChild(b);
+    }
+
+    const next = createEl('button',{className:'btn btn-sm',textContent:'Next'});
+    next.disabled = employeesPage===totalPages;
+    next.onclick = ()=>{ employeesPage++; renderEmployeesTable(); };
+    container.appendChild(next);
+  }
+
+  $('#btn-add-employee').addEventListener('click', ()=>openEmployeeModal());
+
+  function openEmployeeModal(emp) {
+    const isEdit = !!emp;
+    const modal = document.createElement('div');
+    modal.className = 'modal-backdrop';
+    modal.innerHTML = `
+      <div class="modal">
+        <div class="modal-header">
+          <h4>${isEdit ? 'Edit Employee' : 'Add Employee'}</h4>
+          <button class="btn btn-sm btn-danger" id="modal-close">X</button>
+        </div>
+        <div class="modal-body">
+          <div class="form-group">
+            <label>Name</label>
+            <input id="emp-name" type="text" value="${isEdit ? emp.name : ''}">
+          </div>
+          <div class="form-group">
+            <label>Position</label>
+            <input id="emp-position" type="text" value="${isEdit ? emp.position : ''}">
+          </div>
+          <div class="form-group">
+            <label>Supervisor</label>
+            <select id="emp-supervisor">
+              <option value="">-- None --</option>
+            </select>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-primary" id="modal-save">Save</button>
+        </div>
+      </div>
+    `;
+    $('#modal-container').innerHTML = "";
+    $('#modal-container').appendChild(modal);
+    $('#modal-container').classList.remove('hidden');
+
+    // Populate supervisor select
+    const supSelect = modal.querySelector('#emp-supervisor');
+    employees.forEach(e=>{
+      const opt = document.createElement('option');
+      opt.value = e.id;
+      opt.textContent = e.name;
+      if (isEdit && emp.supervisorId===e.id) opt.selected = true;
+      supSelect.appendChild(opt);
+    });
+
+    modal.querySelector('#modal-close').onclick = closeModal;
+    modal.addEventListener('click',e=>{
+      if (e.target===modal) closeModal();
+    });
+
+    modal.querySelector('#modal-save').onclick = ()=>{
+      const name = modal.querySelector('#emp-name').value.trim();
+      const pos  = modal.querySelector('#emp-position').value.trim();
+      const supIdVal = modal.querySelector('#emp-supervisor').value;
+      const supId = supIdVal ? parseInt(supIdVal,10) : null;
+
+      if (!name || !pos) {
+        alert("Name and Position are required.");
+        return;
+      }
+
+      if (isEdit) {
+        emp.name = name;
+        emp.position = pos;
+        emp.supervisorId = supId;
+      } else {
+        const newId = employees.length ? Math.max(...employees.map(e=>e.id))+1 : 1;
+        employees.push({ id:newId, name, position:pos, supervisorId:supId });
+      }
+      closeModal();
+      renderEmployeesTable();
+      renderTeam();
+    };
+  }
+
+  function closeModal() {
+    $('#modal-container').classList.add('hidden');
+    $('#modal-container').innerHTML = "";
+  }
+
+  /*********** TEAM (SUPERVISOR) ***********/
+  function getCurrentSupervisorEmployeeRecord() {
+    // For demo: assume employee with position 'Supervisor' is the logged-in supervisor
+    // or match by name if possible
+    return employees.find(e=>e.position.toLowerCase().includes('supervisor')) || employees[1];
+  }
+
+  function renderTeam() {
+    if (!currentUser || currentUser.role!=='supervisor') return;
+    const sup = getCurrentSupervisorEmployeeRecord();
+    const team = employees.filter(e=>e.supervisorId===sup.id);
+    const tbody = $('#team-tbody');
+    tbody.innerHTML = "";
+    team.forEach(emp=>{
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${emp.id}</td>
+        <td>${emp.name}</td>
+        <td>${emp.position}</td>
+      `;
+      tbody.appendChild(tr);
+    });
+  }
+
+  $('#btn-add-to-team').addEventListener('click', ()=>{
+    if (!currentUser || currentUser.role!=='supervisor') return;
+    const sup = getCurrentSupervisorEmployeeRecord();
+    const modal = document.createElement('div');
+    modal.className = 'modal-backdrop';
+    const available = employees.filter(e=>e.supervisorId!==sup.id && e.id!==sup.id);
+    modal.innerHTML = `
+      <div class="modal">
+        <div class="modal-header">
+          <h4>Add Employee to My Team</h4>
+          <button class="btn btn-sm btn-danger" id="modal-close">X</button>
+        </div>
+        <div class="modal-body">
+          <div class="form-group">
+            <label>Select Employee</label>
+            <select id="team-emp-select">
+              ${available.map(e=>`<option value="${e.id}">${e.name} (${e.position})</option>`).join('')}
+            </select>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-primary" id="modal-save">Add</button>
+        </div>
+      </div>
+    `;
+    $('#modal-container').innerHTML = "";
+    $('#modal-container').appendChild(modal);
+    $('#modal-container').classList.remove('hidden');
+
+    modal.querySelector('#modal-close').onclick = closeModal;
+    modal.addEventListener('click',e=>{ if (e.target===modal) closeModal(); });
+
+    modal.querySelector('#modal-save').onclick = ()=>{
+      const val = modal.querySelector('#team-emp-select').value;
+      if (!val) return;
+      const emp = employees.find(e=>e.id===parseInt(val,10));
+      if (emp) emp.supervisorId = sup.id;
+      closeModal();
+      renderEmployeesTable();
+      renderTeam();
+    };
+  });
+
+  /*********** PAYSLIPS ***********/
+  function renderPayslips() {
+    const tbody = $('#payslip-tbody');
+    tbody.innerHTML = "";
+    let visiblePayslips = [];
+
+    if (!currentUser) return;
+
+    if (currentUser.role === 'hr') {
+      visiblePayslips = payslips;
+    } else if (currentUser.role === 'supervisor') {
+      const sup = getCurrentSupervisorEmployeeRecord();
+      const teamIds = employees.filter(e=>e.supervisorId===sup.id).map(e=>e.id);
+      visiblePayslips = payslips.filter(p=>teamIds.includes(p.employeeId));
+    } else { // employee
+      // For demo, assume currentUser is employee with id=1
+      const empId = 1;
+      visiblePayslips = payslips.filter(p=>p.employeeId===empId);
+    }
+
+    visiblePayslips.forEach(ps=>{
+      const tr = document.createElement('tr');
+      const emp = employees.find(e=>e.id===ps.employeeId);
+      const badgeClass = ps.status==='Approved' ? 'badge-approved' : 'badge-pending';
+      const canApprove = currentUser.role==='hr' && ps.status==='Pending';
+
+      tr.innerHTML = `
+        <td>${ps.id}</td>
+        <td>${emp ? emp.name : 'Unknown'}</td>
+        <td>${ps.period}</td>
+        <td>${ps.amount.toLocaleString()}</td>
+        <td><span class="badge ${badgeClass}">${ps.status}</span></td>
+        <td>
+          ${canApprove ? '<button class="btn btn-sm btn-primary" data-approve="'+ps.id+'">Approve</button>' : ''}
+        </td>
+      `;
+      tbody.appendChild(tr);
+    });
+
+    tbody.querySelectorAll('[data-approve]').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        const id
