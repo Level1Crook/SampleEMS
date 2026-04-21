@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>uConnect EMS - Employees</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header>
+    <div class="logo">
+      <img src="logo.png" alt="uConnect Logo" class="logo-img">
+      <h1>Employees</h1>
+    </div>
+    <div class="user-info">
+      Logged in as: <span id="currentUserName"></span>
+      &nbsp;|&nbsp;
+      <a href="#" id="logoutBtn" style="color:#fff;text-decoration:underline;">Logout</a>
+    </div>
+  </header>
+
+  <nav>
+    <a href="dashboard.html">Home</a>
+    <a href="employees.html" class="nav-supervisor nav-hr">Employees</a>
+    <a href="payslips.html" class="nav-employee nav-supervisor nav-hr">Payslips</a>
+  </nav>
+
+  <div class="main-container">
+    <div style="display:flex;justify-content:space-between;align-items:center;">
+      <h2>Employee List</h2>
+      <button id="addEmployeeBtn" class="btn btn-primary btn-sm">Add Employee</button>
+    </div>
+
+    <table id="employeeTable">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Full Name</th>
+          <th>Role</th>
+          <th>Team / Supervisor</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <!-- Filled by JS -->
+      </tbody>
+    </table>
+
+    <div class="pagination" id="employeePagination"></div>
+  </div>
+
+  <!-- Modal -->
+  <div class="modal-backdrop" id="employeeModalBackdrop">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 id="employeeModalTitle">Add Employee</h3>
+        <span class="modal-close" id="employeeModalClose">&times;</span>
+      </div>
+      <form id="employeeForm">
+        <input type="hidden" id="employeeId">
+        <div class="form-group">
+          <label for="empName">Full Name</label>
+          <input type="text" id="empName" required>
+        </div>
+        <div class="form-group">
+          <label for="empRole">Role</label>
+          <select id="empRole" required>
+            <option value="employee">Employee</option>
+            <option value="supervisor">Supervisor</option>
+            <option value="hr">HR</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="empTeam">Team / Supervisor</label>
+          <input type="text" id="empTeam">
+        </div>
+        <div style="text-align:right;">
+          <button type="button" class="btn btn-secondary" id="employeeModalCancel">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+  <script>
+    // Simple in-memory employees for demo (replace with backend later)
+    let employees = [
+      { id: 1, name: 'Juan Dela Cruz', role: 'employee', team: 'Team A' },
+      { id: 2, name: 'Maria Santos', role: 'employee', team: 'Team A' },
+      { id: 3, name: 'Pedro Reyes', role: 'supervisor', team: 'Team B' },
+      { id: 4, name: 'Ana Lopez', role: 'employee', team: 'Team B' },
+      { id: 5, name: 'HR Manager', role: 'hr', team: 'HR' }
+    ];
+
+    const pageSize = 5;
+    let currentPage = 1;
+
+    function getRoleBadge(role) {
+      if (role === 'employee') return '<span class="badge badge-employee">Employee</span>';
+      if (role === 'supervisor') return '<span class="badge badge-supervisor">Supervisor</span>';
+      if (role === 'hr') return '<span class="badge badge-hr">HR</span>';
+      return role;
+    }
+
+    function renderEmployees() {
+      const tbody = document.querySelector('#employeeTable tbody');
+      tbody.innerHTML = '';
+
+      const startIndex = (currentPage - 1) * pageSize;
+      const pageItems = employees.slice(startIndex, startIndex + pageSize);
+
+      pageItems.forEach((emp, index) => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${startIndex + index + 1}</td>
+          <td>${emp.name}</td>
+          <td>${getRoleBadge(emp.role)}</td>
+          <td>${emp.team || ''}</td>
+          <td>
+            <button class="btn btn-sm btn-primary" onclick="editEmployee(${emp.id})">Edit</button>
+            <button class="btn btn-sm btn-danger" onclick="deleteEmployee(${emp.id})">Delete</button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+
+      renderPagination();
+    }
+
+    function renderPagination() {
+      const totalPages = Math.ceil(employees.length / pageSize) || 1;
+      const pagDiv = document.getElementById('employeePagination');
+      pagDiv.innerHTML = '';
+
+      for (let i = 1; i <= totalPages; i++) {
+        const btn = document.createElement('button');
+        btn.textContent = i;
+        if (i === currentPage) btn.classList.add('active');
+        btn.addEventListener('click', () => {
+          currentPage = i;
+          renderEmployees();
+        });
+        pagDiv.appendChild(btn);
+      }
+    }
+
+    // Modal helpers
+    function openEmployeeModal(editingEmp = null) {
+      const backdrop = document.getElementById('employeeModalBackdrop');
+      const title = document.getElementById('employeeModalTitle');
+      const idField = document.getElementById('employeeId');
+      const nameField = document.getElementById('empName');
+      const roleField = document.getElementById('empRole');
+      const teamField = document.getElementById('empTeam');
+
+      if (editingEmp) {
+        title.textContent = 'Edit Employee';
+        idField.value = editingEmp.id;
+        nameField.value = editingEmp.name;
+        roleField.value = editingEmp.role;
+        teamField.value = editingEmp.team || '';
+      } else {
+        title.textContent = 'Add Employee';
+        idField.value = '';
+        nameField.value = '';
+        roleField.value = 'employee';
+        teamField.value = '';
+      }
+
+      backdrop.style.display = 'flex';
+    }
+
+    function closeEmployeeModal() {
+      document.getElementById('employeeModalBackdrop').style.display = 'none';
+    }
+
+    // CRUD functions (global for inline onclick)
+    function editEmployee(id) {
+      const emp = employees.find(e => e.id === id);
+      if (emp) openEmployeeModal(emp);
+    }
+
+    function deleteEmployee(id) {
+      if (!confirm('Delete this employee?')) return;
+      employees = employees.filter(e => e.id !== id);
+      if ((currentPage - 1) * pageSize >= employees.length) {
+        currentPage = Math.max(1, currentPage - 1);
+      }
+      renderEmployees();
+    }
+
+    // Wait for DOM
+    document.addEventListener('DOMContentLoaded', () => {
+      // Only supervisors and HR can access
+      enforceAuth(['supervisor', 'hr']);
+
+      renderEmployees();
+
+      document.getElementById('addEmployeeBtn').addEventListener('click', () => {
+        openEmployeeModal(null);
+      });
+
+      document.getElementById('employeeModalClose').addEventListener('click', closeEmployeeModal);
+      document.getElementById('employeeModalCancel').addEventListener('click', closeEmployeeModal);
+
+      document.getElementById('employeeForm').addEventListener('submit', e => {
+        e.preventDefault();
+        const id = document.getElementById('employeeId').value;
+        const name = document.getElementById('empName').value.trim();
+        const role = document.getElementById('empRole').value;
+        const team = document.getElementById('empTeam').value.trim();
+
+        if (!name) return;
+
+        if (id) {
+          // update
+          const emp = employees.find(e => e.id === Number(id));
+          if (emp) {
+            emp.name = name;
+            emp.role = role;
+            emp.team = team;
+          }
+        } else {
+          // create
+          const newId = employees.length ? Math.max(...employees.map(e => e.id)) + 1 : 1;
+          employees.push({ id: newId, name, role, team });
+        }
+
+        closeEmployeeModal();
+        renderEmployees();
+      });
+    });
+  </script>
+</body>
+</html>
