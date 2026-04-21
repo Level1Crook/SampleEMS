@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>uConnect EMS - Dashboard</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header>
+    <div class="logo">
+      <img src="logo.png" alt="uConnect Logo" class="logo-img">
+      <h1>Dashboard</h1>
+    </div>
+    <div class="user-info">
+      Logged in as: <span id="currentUserName"></span>
+      &nbsp;|&nbsp;
+      <a href="#" id="logoutBtn" style="color:#fff;text-decoration:underline;">Logout</a>
+    </div>
+  </header>
+
+  <nav>
+    <a href="dashboard.html">Home</a>
+    <a href="employees.html" class="nav-supervisor nav-hr">Employees</a>
+    <a href="payslips.html" class="nav-employee nav-supervisor nav-hr">Payslips</a>
+  </nav>
+
+  <div class="main-container">
+    <h2>Welcome</h2>
+    <p>This is a demo employee management system with role-based access.</p>
+
+    <div id="roleSpecific"></div>
+  </div>
+
+  <script src="app.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      enforceAuth(); // any logged in user allowed
+
+      const user = getCurrentUser();
+      const roleDiv = document.getElementById('roleSpecific');
+
+      if (!user) return;
+
+      if (user.role === 'employee') {
+        roleDiv.innerHTML = `
+          <h3>Employee Quick Actions</h3>
+          <ul>
+            <li>View your payslips</li>
+            <li>Time in / Time out (future feature)</li>
+          </ul>
+        `;
+      } else if (user.role === 'supervisor') {
+        roleDiv.innerHTML = `
+          <h3>Supervisor Quick Actions</h3>
+          <ul>
+            <li>Manage your team members</li>
+            <li>View team payslips</li>
+          </ul>
+        `;
+      } else if (user.role === 'hr') {
+        roleDiv.innerHTML = `
+          <h3>HR Quick Actions</h3>
+          <ul>
+            <li>Manage all employees</li>
+            <li>Review and approve payslips</li>
+          </ul>
+        `;
+      }
+    });
+  </script>
+</body>
+</html>
