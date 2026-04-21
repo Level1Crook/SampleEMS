@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>uConnect EMS - Payslips</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header>
+    <div class="logo">
+      <img src="logo.png" alt="uConnect Logo" class="logo-img">
+      <h1>Payslips</h1>
+    </div>
+    <div class="user-info">
+      Logged in as: <span id="currentUserName"></span>
+      &nbsp;|&nbsp;
+      <a href="#" id="logoutBtn" style="color:#fff;text-decoration:underline;">Logout</a>
+    </div>
+  </header>
+
+  <nav>
+    <a href="dashboard.html">Home</a>
+    <a href="employees.html" class="nav-supervisor nav-hr">Employees</a>
+    <a href="payslips.html" class="nav-employee nav-supervisor nav-hr">Payslips</a>
+  </nav>
+
+  <div class="main-container">
+    <h2>Payslip List</h2>
+    <p id="payslipInfo" style="font-size:13px;color:#555;"></p>
+
+    <table id="payslipTable">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Employee</th>
+          <th>Period</th>
+          <th>Net Pay</th>
+          <th>Status</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <!-- JS -->
+      </tbody>
+    </table>
+  </div>
+
+  <script src="app.js"></script>
+  <script>
+    // Demo payslips
+    let payslips = [
+      { id: 1, employee: 'Employee One', username: 'employee1', period: 'Apr 1-15, 2026', net: 15000, status: 'pending' },
+      { id: 2, employee: 'Employee One', username: 'employee1', period: 'Apr 16-30, 2026', net: 15000, status: 'approved' },
+      { id: 3, employee: 'Juan Dela Cruz', username: 'emp_juan', period: 'Apr 1-15, 2026', net: 12000, status: 'pending' },
+      { id: 4, employee: 'Maria Santos', username: 'emp_maria', period: 'Apr 1-15, 2026', net: 13000, status: 'approved' }
+    ];
+
+    function statusBadge(status) {
+      if (status === 'pending') return '<span class="badge badge-pending">Pending</span>';
+      if (status === 'approved') return '<span class="badge badge-approved">Approved</span>';
+      if (status === 'rejected') return '<span class="badge badge-rejected">Rejected</span>';
+      return status;
+    }
+
+    function renderPayslips() {
+      const user = getCurrentUser();
+      const tbody = document.querySelector('#payslipTable tbody');
+      tbody.innerHTML = '';
+
+      let visiblePayslips = [];
+
+      if (user.role === 'employee') {
+        // For demo, show only rows with username === user.username
+        visiblePayslips = payslips.filter(p => p.username === user.username);
+        document.getElementById('payslipInfo').textContent =
+          'You can view your own payslips.';
+      } else if (user.role === 'supervisor') {
+        // For demo: show all except HR's (no HR payslips in demo data anyway)
+        visiblePayslips = payslips;
+        document.getElementById('payslipInfo').textContent =
+          'You can view payslips of employees in your team. (Demo: all payslips are shown.)';
+      } else if (user.role === 'hr') {
+        visiblePayslips = payslips;
+        document.getElementById('payslipInfo').textContent =
+          'You can view and approve all payslips.';
+      }
+
+      visiblePayslips.forEach((ps, index) => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${index + 1}</td>
+          <td>${ps.employee}</td>
+          <td>${ps.period}</td>
+          <td>₱${ps.net.toLocaleString()}</td>
+          <td>${statusBadge(ps.status)}</td>
+          <td>${renderPayslipActions(ps)}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function renderPayslipActions(ps) {
+      const user = getCurrentUser();
+      if (!user) return '';
+
+      // Only HR can approve/reject
+      if (user.role === 'hr') {
+        return `
+          <button class="btn btn-sm btn-primary" onclick="approvePayslip(${ps.id})">Approve</button>
+          <button class="btn btn-sm btn-danger" onclick="rejectPayslip(${ps.id})">Reject</button>
+        `;
+      }
+      // Other roles: maybe "View" only
+      return `<button class="btn btn-sm btn-secondary" onclick="viewPayslip(${ps.id})">View</button>`;
+    }
+
+    // Global functions for inline onclick
+    function approvePayslip(id) {
+      const ps = payslips.find(p => p.id === id);
+      if (!ps) return;
+      ps.status = 'approved';
+      renderPayslips();
+    }
+
+    function rejectPayslip(id) {
+      const ps = payslips.find(p => p.id === id);
+      if (!ps) return;
+      ps.status = 'rejected';
+      renderPayslips();
+    }
+
+    function viewPayslip(id) {
+      alert('This would show the payslip details in a modal. (Demo only)');
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      // Any logged in user can view the page, logic inside renderPayslips
+      enforceAuth();
+      renderPayslips();
+    });
+  </script>
+</body>
+</html>
